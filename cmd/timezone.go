@@ -1,6 +1,6 @@
 package cmd
 
-var CityToTimezone = map[string]map[string]string{
+var cityToTimezone = map[string]map[string]string{
 	"Niue":           {"tz": "Pacific/Niue", "country": "Niue"},
 	"Midway":         {"tz": "Pacific/Midway", "country": "United States of America"},
 	"Pago Pago":      {"tz": "Pacific/Pago_Pago", "country": "United States of America"},
