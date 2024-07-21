@@ -14,6 +14,7 @@ import (
 // constants and variables for list view
 const listHeight = 14
 
+// style variables for list display
 var (
 	titleStyle        = lipgloss.NewStyle().MarginLeft(2)
 	itemStyle         = lipgloss.NewStyle().PaddingLeft(4)
@@ -34,10 +35,9 @@ type item string
 // declare viewState type which represents either table or list view
 type viewState int
 
-//declare constant listView and tableView (iota starts from 0 and increments by 1)
-//in golang, when you declare const within a `const` block and only specify the
-//type for the first const, the subsequent constants inherit from the first one.
-
+// declare constant listView and tableView (iota starts from 0 and increments by 1)
+// in golang, when you declare const within a `const` block and only specify the
+// type for the first const, the subsequent constants inherit from the first one.
 const (
 	listView viewState = iota
 	tableView
@@ -77,7 +77,7 @@ type model struct {
 	state    viewState
 }
 
-func initialListModel() model {
+func initialModel(state viewState) model {
 	//Initialize the list model
 	const defaultWidth = 20
 	l := list.New([]list.Item{}, itemDelegate{}, defaultWidth, listHeight)
@@ -87,17 +87,12 @@ func initialListModel() model {
 	l.Styles.Title = titleStyle
 	l.Styles.PaginationStyle = paginationStyle
 	l.Styles.HelpStyle = helpStyle
-	m := model{list: l, state: listView}
-	return m
-}
 
-func initialTableModel() model {
-
-	//Initalize the table model
+	//initialize table model
 	columns := []table.Column{
-		{Title: "City", Width: 10},
+		{Title: "City", Width: 15},
 		{Title: "TimeZone", Width: 20},
-		{Title: "Country", Width: 20},
+		{Title: "Country", Width: 15},
 		{Title: "Date/Time", Width: 30},
 	}
 
@@ -107,6 +102,7 @@ func initialTableModel() model {
 		table.WithColumns(columns),
 		table.WithRows(rows),
 		table.WithFocused(false),
+		table.WithHeight(1),
 	)
 
 	s := table.DefaultStyles()
@@ -117,8 +113,7 @@ func initialTableModel() model {
 		Bold(false)
 	s.Selected = lipgloss.NewStyle()
 	t.SetStyles(s)
-
-	m := model{table: t, state: tableView}
+	m := model{list: l, table: t, state: state}
 	return m
 }
 
@@ -128,68 +123,64 @@ func (m model) Init() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	switch m.state {
-	case listView:
-		switch msg := msg.(type) {
-		case tea.WindowSizeMsg:
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		if m.state == listView {
 			m.list.SetWidth(msg.Width)
 			return m, nil
+		}
 
-		case tea.KeyMsg:
-			switch keypress := msg.String(); keypress {
-			case "q", "ctrl+c":
-				m.quitting = true
-				return m, tea.Quit
+	case tea.KeyMsg:
+		switch keypress := msg.String(); keypress {
+		case "q", "ctrl+c":
+			m.quitting = true
+			return m, tea.Quit
 
-			case "enter":
+		case "enter":
+			if m.state == listView {
 				i, ok := m.list.SelectedItem().(item)
 				if ok {
 					m.choice = string(i)
+					m.state = tableView
+					rows := []table.Row{}
+					timeResponse, err := formatTime(cityToTimezone[m.choice]["tz"])
+					if err != nil {
+						fmt.Printf("Error loading time zone: %v\n", err)
+					} else {
+						rows = append(rows, table.Row{m.choice, cityToTimezone[m.choice]["tz"], cityToTimezone[m.choice]["country"], timeResponse})
+					}
+
+					m.table.SetRows(rows)
 				}
 				return m, tea.Quit
+
 			}
 		}
-
+	}
+	switch m.state {
+	case listView:
 		m.list, cmd = m.list.Update(msg)
-		return m, cmd
-
 	case tableView:
-		if m.quitting {
-			return m, tea.Quit
-		}
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "q", "ctrl+c":
-				return m, tea.Quit
-			case "enter":
-				return m, tea.Quit
-			}
-		}
 		m.table, cmd = m.table.Update(msg)
+		cmd = tea.Quit
 	}
 	return m, cmd
+
 }
 
 func (m model) View() string {
-	var viewResponse string
 	switch m.state {
 	case listView:
-		if m.choice != "" {
-			tableViewDateTime([]string{m.choice})
-			// m.quitting = true
-			// s, _ := formatTime(cityToTimezone[m.choice]["tz"])
-			// return "\n"+s+"\n"
-			return "\n"
-		}
 		if m.quitting {
 			return quitTextStyle.Render("Don't wanna check time? That’s cool.")
 		}
-		viewResponse = "\n" + m.list.View()
+		return "\n" + m.list.View()
 	case tableView:
-		viewResponse = baseTableStyle.Render(m.table.View()) + "\n"
+		m.quitting = true
+		return "\n" + baseTableStyle.Render(m.table.View()) + "\n \n"
+	default:
+		return ""
 	}
-	return viewResponse
 
 }
 
@@ -200,7 +191,7 @@ func (m model) View() string {
 //	-timezones: list of timezones
 func listViewTz(timezones []string) {
 	const defaultWidth = 20
-	m := initialListModel()
+	m := initialModel(listView)
 	//Accumulate items in a slice
 	items := []list.Item{}
 	for _, tz := range timezones {
@@ -220,7 +211,7 @@ func listViewTz(timezones []string) {
 //	-timezones: list of timezones
 func tableViewDateTime(cities []string) {
 
-	m := initialTableModel()
+	m := initialModel(tableView)
 	//Accumulate items in a slice
 	rows := []table.Row{}
 	for _, city := range cities {
