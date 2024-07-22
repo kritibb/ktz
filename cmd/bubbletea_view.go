@@ -29,6 +29,7 @@ var baseTableStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
 
+
 // decalre item type for listing
 type item string
 
@@ -97,6 +98,7 @@ func initialModel(state viewState) model {
 	}
 
 	rows := []table.Row{}
+    
 
 	t := table.New(
 		table.WithColumns(columns),
@@ -105,12 +107,26 @@ func initialModel(state viewState) model {
 		table.WithHeight(1),
 	)
 
+
 	s := table.DefaultStyles()
+    
+    s.Cell = s.Cell.
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		BorderRight(true).
+		BorderLeft(true)
+        
+
+    
+
 	s.Header = s.Header.
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(lipgloss.Color("240")).
+		BorderRight(true).
 		BorderBottom(true).
+		BorderLeft(true).
 		Bold(false)
+    
 	s.Selected = lipgloss.NewStyle()
 	t.SetStyles(s)
 	m := model{list: l, table: t, state: state}
