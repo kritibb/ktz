@@ -7,20 +7,27 @@ import (
 
 // DisplayTime prints the current time in the specified location.
 // The 'location' parameter should be a prefix or a complete city.
-// If the location is invalid, an error message is printed.
-func DisplayTime(location string) {
-	//Get potential cities based on the provided location string
-	cityList, err := getMatchingCities(location)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	//if cityList consists only one timezone, display time for that timezone, else
-	//display list of potential timezones that came from the location string (prefix)
-	if len(cityList) == 1 {
-        tableViewDateTime(cityList)
+// The 'zone' parameter should be a timezone like 'Asia/Kathmandu' or 'pst'
+// Time is displayed based on either location or zone
+// If the location is invalid, an error message is printed, else 
+// timezone is displayed based on it.
+func DisplayTime(location, zone string) {
+	if zone == "" {
+		//Get potential cities based on the provided location string
+		cityList, err := getMatchingCities(location)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+		//if cityList consists only one timezone, display time for that timezone, else
+		//display list of potential timezones that came from the location string (prefix)
+		if len(cityList) == 1 {
+			tableViewDateTime(cityList, zone)
+		} else {
+			listViewTz(cityList)
+		}
 	} else {
-		listViewTz(cityList)
+		tableViewDateTime([]string{}, zone)
 
 	}
 
@@ -47,5 +54,5 @@ func formatTime(tz string) (string, error) {
 
 	// Print the local time
 	const customFormat = "Mon, 02 Jan 2006 03:04:05 PM"
-    return localTime.Format(customFormat),nil
+	return localTime.Format(customFormat), nil
 }

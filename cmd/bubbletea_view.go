@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/kritibb/ktz/tzdata"
 	"io"
 	"os"
 	"strings"
@@ -28,7 +29,6 @@ var (
 var baseTableStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
-
 
 // decalre item type for listing
 type item string
@@ -90,15 +90,9 @@ func initialModel(state viewState) model {
 	l.Styles.HelpStyle = helpStyle
 
 	//initialize table model
-	columns := []table.Column{
-		{Title: "City", Width: 15},
-		{Title: "TimeZone", Width: 20},
-		{Title: "Country", Width: 15},
-		{Title: "Date/Time", Width: 30},
-	}
+	columns := []table.Column{}
 
 	rows := []table.Row{}
-    
 
 	t := table.New(
 		table.WithColumns(columns),
@@ -107,17 +101,13 @@ func initialModel(state viewState) model {
 		table.WithHeight(1),
 	)
 
-
 	s := table.DefaultStyles()
-    
-    s.Cell = s.Cell.
+
+	s.Cell = s.Cell.
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(lipgloss.Color("240")).
 		BorderRight(true).
 		BorderLeft(true)
-        
-
-    
 
 	s.Header = s.Header.
 		BorderStyle(lipgloss.NormalBorder()).
@@ -126,7 +116,7 @@ func initialModel(state viewState) model {
 		BorderBottom(true).
 		BorderLeft(true).
 		Bold(false)
-    
+
 	s.Selected = lipgloss.NewStyle()
 	t.SetStyles(s)
 	m := model{list: l, table: t, state: state}
@@ -159,11 +149,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.choice = string(i)
 					m.state = tableView
 					rows := []table.Row{}
-					timeResponse, err := formatTime(cityToTimezone[m.choice]["tz"])
+					timeResponse, err := formatTime(tzdata.CityToIanaTimezone[m.choice]["tz"])
 					if err != nil {
 						fmt.Printf("Error loading time zone: %v\n", err)
 					} else {
-						rows = append(rows, table.Row{m.choice, cityToTimezone[m.choice]["tz"], cityToTimezone[m.choice]["country"], timeResponse})
+						rows = append(rows, table.Row{m.choice, tzdata.CityToIanaTimezone[m.choice]["tz"], tzdata.CityToIanaTimezone[m.choice]["country"], timeResponse})
 					}
 
 					m.table.SetRows(rows)
@@ -225,22 +215,59 @@ func listViewTz(timezones []string) {
 // Parameters:
 //
 //	-timezones: list of timezones
-func tableViewDateTime(cities []string) {
-
+func tableViewDateTime(cities []string, zone string) {
 	m := initialModel(tableView)
-	//Accumulate items in a slice
 	rows := []table.Row{}
-	for _, city := range cities {
-		timeResponse, err := formatTime(cityToTimezone[city]["tz"])
+	columns := []table.Column{}
+	if zone == "" {
+
+		columns = append(columns,
+			table.Column{Title: "City", Width: 15},
+			table.Column{Title: "TimeZone", Width: 20},
+			table.Column{Title: "Country", Width: 15},
+			table.Column{Title: "Date/Time", Width: 30},
+		)
+		//Accumulate items in a slice
+		for _, city := range cities {
+			timeResponse, err := formatTime(tzdata.CityToIanaTimezone[city]["tz"])
+			if err != nil {
+				fmt.Printf("Error loading time zone: %v\n", err)
+			} else {
+				rows = append(rows, table.Row{city, tzdata.CityToIanaTimezone[city]["tz"], tzdata.CityToIanaTimezone[city]["country"], timeResponse})
+			}
+		}
+		m.table.SetHeight(len(cities))
+
+	} else {
+		columns = append(columns,
+			table.Column{Title: "TimeZone", Width: 20},
+			table.Column{Title: "Date/Time", Width: 30},
+		)
+		var timeResponse,tz string
+		var err error
+        var ok bool
+
+		if len(zone) < 6 {
+			tz, ok = tzdata.AbbToIanaTimezone[strings.ToUpper(zone)]
+			if ok {
+				timeResponse, err = formatTime(tz)
+			} else {
+				fmt.Printf("\n Timezone not found: %v\n\n", zone)
+				return
+			}
+		} else {
+            tz=zone
+			timeResponse, err = formatTime(zone)
+		}
 		if err != nil {
 			fmt.Printf("Error loading time zone: %v\n", err)
 		} else {
-			rows = append(rows, table.Row{city, cityToTimezone[city]["tz"], cityToTimezone[city]["country"], timeResponse})
+			rows = append(rows, table.Row{tz, timeResponse})
 		}
 	}
 
+	m.table.SetColumns(columns)
 	m.table.SetRows(rows)
-	m.table.SetHeight(len(cities))
 	if _, err := tea.NewProgram(m).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)

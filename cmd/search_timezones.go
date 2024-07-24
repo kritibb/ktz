@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"unicode"
+
+	"github.com/kritibb/ktz/tzdata"
 )
 
 // trieNode represents a node in the Trie data structure.
@@ -198,7 +200,7 @@ var (
 
 // initializetrie initializes the Trie with city names from CityToTimezone.
 func initializeTrie() {
-	for city, _ := range cityToTimezone {
+	for city := range tzdata.CityToIanaTimezone {
 		new_trie.insertWord(city, city)
 	}
 }
