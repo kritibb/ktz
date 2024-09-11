@@ -147,19 +147,46 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				i, ok := m.list.SelectedItem().(item)
 				if ok {
 					m.choice = string(i)
-					m.state = tableView
-					rows := []table.Row{}
-					timeResponse, err := formatTime(tzdata.CityToIanaTimezone[m.choice]["tz"])
-					if err != nil {
-						fmt.Printf("Error loading time zone: %v\n", err)
+					//check if selected option is a country and it has more than one timezones
+					if timezones, ok := tzdata.CountryToIanaTimezone[m.choice]; ok && len(timezones) > 1 {
+						m.state = listView
+						items := make([]list.Item, len(timezones))
+						for idx, tz := range timezones {
+							items[idx] = item(tz)
+						}
+						m.list.SetItems(items)
+						return m, cmd
 					} else {
-						rows = append(rows, table.Row{m.choice, tzdata.CityToIanaTimezone[m.choice]["tz"], tzdata.CityToIanaTimezone[m.choice]["country"], timeResponse})
+						// switch to tableview for a country, city or a tz
+						m.state = tableView
+						columns := []table.Column{}
+						rows := []table.Row{}
+						//check if selected option is not a city, but a country's tz in the form of "America/New_York"
+						if _, ok1 := tzdata.CityToIanaTimezone[m.choice]; !ok1 {
+							if _, ok2 := tzdata.CountryToIanaTimezone[m.choice]; !ok2 {
+								columns = append(columns,
+									table.Column{Title: "TimeZone", Width: 20},
+									// table.Column{Title: "Country", Width: 25},
+									table.Column{Title: "Date/Time", Width: 30},
+								)
+								timeResponse, err := formatTime(m.choice)
+								if err != nil {
+									fmt.Printf("Error loading time zone: %v\n", err)
+                                    return m,nil
+								} else {
+									rows = append(rows, table.Row{m.choice, timeResponse})
+								}
+							}
+						} else {
+							//for a city or a country
+							rows, columns = buildTableFromLocation(m.choice)
+						}
+						m.table.SetColumns(columns)
+						m.table.SetRows(rows)
+						return m, tea.Quit
 					}
 
-					m.table.SetRows(rows)
 				}
-				return m, tea.Quit
-
 			}
 		}
 	}
@@ -210,66 +237,129 @@ func listViewTz(timezones []string) {
 	}
 }
 
-// tableViewTime returns a table consisting city, timezone, country, datetime.
+// tableViewDateTime returns a table consisting timezone, country, datetime.
 //
 // Parameters:
 //
-//	-timezones: list of timezones
-func tableViewDateTime(cities []string, zone string) {
+//		-location: A country or a city
+//		-zone: Abbreviation of timezone like 'pst'
+//	        or a full timezone like "Asia/Kathmandu"
+func tableViewDateTime(location, zone string) {
 	m := initialModel(tableView)
 	rows := []table.Row{}
 	columns := []table.Column{}
-	if zone == "" {
-
-		columns = append(columns,
-			table.Column{Title: "City", Width: 15},
-			table.Column{Title: "TimeZone", Width: 20},
-			table.Column{Title: "Country", Width: 15},
-			table.Column{Title: "Date/Time", Width: 30},
-		)
-		//Accumulate items in a slice
-		for _, city := range cities {
-			timeResponse, err := formatTime(tzdata.CityToIanaTimezone[city]["tz"])
-			if err != nil {
-				fmt.Printf("Error loading time zone: %v\n", err)
-			} else {
-				rows = append(rows, table.Row{city, tzdata.CityToIanaTimezone[city]["tz"], tzdata.CityToIanaTimezone[city]["country"], timeResponse})
-			}
-		}
-		m.table.SetHeight(len(cities))
+	if location != "" {
+		rows, columns = buildTableFromLocation(location)
+		m.table.SetHeight(1)
 
 	} else {
-		columns = append(columns,
-			table.Column{Title: "TimeZone", Width: 20},
-			table.Column{Title: "Date/Time", Width: 30},
-		)
-		var timeResponse,tz string
-		var err error
-        var ok bool
+		rows, columns = buildTableFromZone(zone)
+	}
+	if rows != nil && columns != nil {
+		m.table.SetColumns(columns)
+		m.table.SetRows(rows)
+		if _, err := tea.NewProgram(m).Run(); err != nil {
+			fmt.Println("Error running program:", err)
+			os.Exit(1)
+		}
 
-		if len(zone) < 6 {
-			tz, ok = tzdata.AbbToIanaTimezone[strings.ToUpper(zone)]
-			if ok {
-				timeResponse, err = formatTime(tz)
-			} else {
-				fmt.Printf("\n Timezone not found: %v\n\n", zone)
-				return
-			}
-		} else {
-            tz=zone
-			timeResponse, err = formatTime(zone)
-		}
-		if err != nil {
-			fmt.Printf("Error loading time zone: %v\n", err)
-		} else {
-			rows = append(rows, table.Row{tz, timeResponse})
-		}
 	}
 
-	m.table.SetColumns(columns)
-	m.table.SetRows(rows)
-	if _, err := tea.NewProgram(m).Run(); err != nil {
-		fmt.Println("Error running program:", err)
-		os.Exit(1)
-	}
 }
+
+func buildTableFromLocation(location string) ([]table.Row, []table.Column) {
+	row := []table.Row{}
+	columns := []table.Column{}
+	columns = append(columns,
+		table.Column{Title: "TimeZone", Width: 20},
+		table.Column{Title: "Country", Width: 25},
+		table.Column{Title: "Date/Time", Width: 30},
+	)
+	var tz, country string
+	if val, ok := tzdata.CityToIanaTimezone[location]; ok {
+		tz = val["tz"]
+		country = val["country"]
+	} else if val, ok := tzdata.CountryToIanaTimezone[location]; ok {
+		if len(val) > 1 {
+			listViewTz(val)
+			return nil, nil
+		}
+		tz = val[0]
+		country = location
+	}
+	timeResponse, err := formatTime(tz)
+	if err != nil {
+		fmt.Printf("Error loading time zone: %v\n", err)
+		return nil, nil
+	}
+	row = append(row, table.Row{tz, country, timeResponse})
+	return row, columns
+}
+
+func buildTableFromZone(zone string) ([]table.Row, []table.Column) {
+	row := []table.Row{}
+	columns := []table.Column{}
+	columns = append(columns,
+		table.Column{Title: "TimeZone", Width: 20},
+		table.Column{Title: "Date/Time", Width: 30},
+	)
+	var timeResponse, tz string
+	var err error
+
+	if len(zone) < 6 {
+		columns = append(columns,
+			table.Column{Title: "Zone Abbr.", Width: 20},
+		)
+		if val, ok := tzdata.AbbToIanaTimezone[strings.ToUpper(zone)]; !ok {
+			fmt.Printf("\n Zone abbreviation not found: %v.\n\n", zone)
+			return nil, nil
+		} else {
+			tz = val
+		}
+		row = append(row, table.Row{tz, "", zone})
+	} else {
+		tz = zone
+		row = append(row, table.Row{tz, ""})
+	}
+	timeResponse, err = formatTime(tz)
+	if err != nil {
+		fmt.Printf("Error loading time zone: %v\n", err)
+		return nil, nil
+	}
+	row[0][1] = timeResponse
+	return row, columns
+
+}
+
+func buildCountryTzTable() {
+
+}
+
+//func buildRowFromCityOrCountry(locationList []string) {
+//	rows := []table.Row{}
+//	columns := []table.Column{}
+//	columns = append(columns,
+//		table.Column{Title: "TimeZone", Width: 20},
+//		table.Column{Title: "Country", Width: 15},
+//		table.Column{Title: "Date/Time", Width: 30},
+//	)
+//	//Accumulate items in a slice
+//	for _, location := range locationList {
+//		if val, ok := tzdata.CityToIanaTimezone[location]; ok {
+//			timeResponse, err := formatTime(val["tz"])
+//			if err != nil {
+//				fmt.Printf("Error loading time zone: %v\n", err)
+//				return
+//			}
+//			rows = append(rows, table.Row{val["tz"], val["country"], timeResponse})
+//		} else if val, ok := tzdata.CountryToIanaTimezone[location]; ok {
+//			timeResponse, err := formatTime(val[0])
+//			if err != nil {
+//				fmt.Printf("Error loading time zone: %v\n", err)
+//				return
+//			}
+//			rows = append(rows, table.Row{val[0], location, timeResponse})
+//		}
+//	}
+
+//}

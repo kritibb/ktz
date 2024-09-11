@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -97,8 +96,8 @@ func collectAllWords(node *trieNode, prefix string) []string {
 		words = append(words, node.originalWord)
 
 	}
-	for char, child_node := range node.children {
-		childWords := collectAllWords(child_node, prefix+string(char))
+	for char, childNode := range node.children {
+		childWords := collectAllWords(childNode, prefix+string(char))
 		words = append(words, childWords...)
 	}
 
@@ -126,10 +125,10 @@ func levenshteinDistance(s1, s2 string) int {
 	for i := range previousRow {
 		previousRow[i] = i
 	}
-	for i, _ := range s1 {
+	for i := range s1 {
 		currentRow := make([]int, len(s2)+1)
 		currentRow[0] = i + 1
-		for j, _ := range s2 {
+		for j := range s2 {
 			deletionCost := previousRow[j+1] + 1
 			insertionCost := currentRow[j] + 1
 			substitutionCost := previousRow[j]
@@ -199,22 +198,36 @@ var (
 )
 
 // initializetrie initializes the Trie with city names from CityToTimezone.
-func initializeTrie() {
+func initializeCityTrie() {
 	for city := range tzdata.CityToIanaTimezone {
 		new_trie.insertWord(city, city)
 	}
 }
 
-// getMatchingCities retrieves matching cities based on a given prefix/city string by performing fuzzy search.
+// initializetrie initializes the Trie with city names from CityToTimezone.
+func initializeCountryTrie() {
+	for country := range tzdata.CountryToIanaTimezone {
+		new_trie.insertWord(country, country)
+	}
+}
+
+// getMatchingLocation retrieves matching cities/countries based on a given prefix/city string by performing fuzzy search.
 //
 // It ensures the Trie is initialized before performing the search.
-// It returns matching cities if any city matches the given string, otherwise an error.
-func getMatchingCities(city string) ([]string, error) {
-	once.Do(initializeTrie)
-	found, matchingOriginalCityNames := new_trie.searchWordWithPrefix(city)
-	if found {
-		return matchingOriginalCityNames, nil
+// It returns matching cities/countires if any city/country matches the given string, otherwise an error.
+func getMatchingLocation(city, country string) ([]string, error) {
+	if city != "" {
+		once.Do(initializeCityTrie)
+		if found, matchingOriginalLocationNames := new_trie.searchWordWithPrefix(city); found {
+			return matchingOriginalLocationNames, nil
+		}
+		return nil, fmt.Errorf("City '%s' not found!", city)
+	} else {
+		once.Do(initializeCountryTrie)
+		if found, matchingOriginalLocationNames := new_trie.searchWordWithPrefix(country); found {
+			return matchingOriginalLocationNames, nil
+
+		}
+		return nil, fmt.Errorf("Country '%s' not found!", country)
 	}
-	err := fmt.Sprintf("City '%s' not found!", city)
-	return []string{}, errors.New(err)
 }
