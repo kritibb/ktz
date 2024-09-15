@@ -172,13 +172,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 								timeResponse, err := formatTime(m.choice)
 								if err != nil {
 									fmt.Printf("Error loading time zone: %v\n", err)
-                                    return m,nil
+									return m, nil
 								} else {
 									rows = append(rows, table.Row{m.choice, timeResponse})
 								}
-							}
+							}else{
+							//for a country
+							rows, columns = buildTableFromLocation(m.choice)
+                            }
 						} else {
-							//for a city or a country
+							//for a city
 							rows, columns = buildTableFromLocation(m.choice)
 						}
 						m.table.SetColumns(columns)
@@ -217,7 +220,7 @@ func (m model) View() string {
 
 }
 
-// listViewTz lists(bubbletea simple-list format) all possible timzones returned by prefix search (eg: "Asia/Kathmandu")
+// listViewTz lists(bubbletea simple-list format) all possible timzones returned by prefix search for country/city
 //
 // Parameters:
 //
@@ -267,6 +270,12 @@ func tableViewDateTime(location, zone string) {
 
 }
 
+// buildTableFromLocation returns a rows and columns for a table
+//
+// Parameters:
+//		-location: A country or a city
+// Returns:
+//		-[]table.Row, []table.Column: A row and column for a table
 func buildTableFromLocation(location string) ([]table.Row, []table.Column) {
 	row := []table.Row{}
 	columns := []table.Column{}
@@ -296,6 +305,12 @@ func buildTableFromLocation(location string) ([]table.Row, []table.Column) {
 	return row, columns
 }
 
+// buildTableFromZone returns a rows and columns for a table
+//
+// Parameters:
+//		-zone: A timezone like 'Asia/Kathmandu' or 'pst'
+// Returns:
+//		-[]table.Row, []table.Column: A row and column for a table
 func buildTableFromZone(zone string) ([]table.Row, []table.Column) {
 	row := []table.Row{}
 	columns := []table.Column{}
@@ -331,9 +346,6 @@ func buildTableFromZone(zone string) ([]table.Row, []table.Column) {
 
 }
 
-func buildCountryTzTable() {
-
-}
 
 //func buildRowFromCityOrCountry(locationList []string) {
 //	rows := []table.Row{}

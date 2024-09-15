@@ -119,11 +119,21 @@ func printLookupHelp() {
 	fmt.Println("  ktz lookup -c=NP or -c='Nepal'")
 }
 
+/////////////////////////////////////Completed///////////////////////////
+
 // ktz lookup -z="America/New_York"/ "pst"
+// ktz lookup -c="usa"/ 
 // ktz lookup nepal
 // ktz lookup kathmandu
 
-//ktz add -tz="America/New_York" --- only add the tz you know
+//////////////////////////////////// TODO ////////////////////////////
+//search country by 2-3 country code
+//edit country names to autonomous regions, and change the country in the cityTOIANA as well.
+//add more command like ktz help
+//write tests
+
+//////////////////////////////////// Future ////////////////////////////
+//ktz add -tz="America/New_York" --- only add the tz you know and store in local storage
 //ktz remove -tz="America/New_York" --- only remove the tz you know
 //ktz remove -interactive mode
 
