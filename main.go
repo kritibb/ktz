@@ -21,6 +21,9 @@ func main() {
 	lookupC := lookupCmd.String("c", "", "country name/code like `Nepal` or `NP`")
 	lookupZ := lookupCmd.String("z", "", "`timezones` like `Asia/Kathmandu` or `PST`")
 
+	//define subcommand `lookup` and its flags
+	helpCmd := flag.NewFlagSet("help", flag.ExitOnError)
+
 	// Check if subcommands like "lookup" is provided
 	if len(os.Args) < 2 {
 		printError("", "\n Error: Incomplete command")
@@ -39,7 +42,7 @@ func main() {
 		if (*lookupZ != "" && *lookupC != "") ||
 			(*lookupZ != "" && len(lookupCmd.Args()) != 0) ||
 			(*lookupC != "" && len(lookupCmd.Args()) != 0) {
-			printError("lookup", "\nError: Use only a flag [-z] or [-c] or [city/country]")
+			printError("lookup", "\nError: Use only a flag [-z] or [-c] or <city>")
 			return
 		}
 
@@ -54,6 +57,10 @@ func main() {
 			// Display the current local time based on the given city
 			cmd.ResolveTimezone(city, "", "")
 		}
+    case "help":
+        helpCmd.Parse(os.Args[2:])
+        printLookupHelp()
+
 	default:
 		printError("", "\n Error: Unknown command")
 
@@ -97,7 +104,7 @@ func printError(errCmd, errMsg string) {
 	fmt.Println(errMsg)
 	switch errCmd {
 	case "lookup":
-		fmt.Println(" Usage: ktz lookup [options] [city]")
+		fmt.Println(" Usage: ktz lookup [options] <city>")
 	default:
 	}
 	fmt.Println(" For more information, try 'ktz help'")
@@ -106,23 +113,25 @@ func printError(errCmd, errMsg string) {
 }
 
 func printLookupHelp() {
-	fmt.Println("Usage: ktz lookup [options] [city/country]")
+	fmt.Println("Usage: ktz lookup [options] <city>")
 	fmt.Println()
 	fmt.Println("Look up the current time for a city,zone or country")
 	fmt.Println()
 	fmt.Println("Options:")
-	fmt.Println("  -tz string  Specify the timezone for a city or a zone")
+	fmt.Println("  -z string  Specify a timezone")
+	fmt.Println("  -c string  Specify a country name or alpha2/alpha3 code")
 	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  ktz lookup \"New York\"")
 	fmt.Println("  ktz lookup -z=America/New_York or -z=PST")
-	fmt.Println("  ktz lookup -c=NP or -c='Nepal'")
+	fmt.Println("  ktz lookup -c=NP or -c=Nepal")
 }
+
 
 /////////////////////////////////////Completed///////////////////////////
 
 // ktz lookup -z="America/New_York"/ "pst"
-// ktz lookup -c="usa"/ 
+// ktz lookup -c="usa"/
 // ktz lookup nepal
 // ktz lookup kathmandu
 //edit country names to autonomous regions, and change the country in the cityTOIANA as well.
