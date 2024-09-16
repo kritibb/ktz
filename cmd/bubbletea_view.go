@@ -25,6 +25,14 @@ var (
 	quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
 )
 
+// struct to store a country that the user selects and has multiple time zones
+type selectedCountry struct {
+	name       string
+	isSelected bool
+}
+
+var storedCountry selectedCountry
+
 // variable for table view
 var baseTableStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
@@ -149,6 +157,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.choice = string(i)
 					//check if selected option is a country and it has more than one timezones
 					if timezones, ok := tzdata.CountryToIanaTimezone[m.choice]; ok && len(timezones) > 1 {
+						if !storedCountry.isSelected {
+							storedCountry.name = string(i)
+							storedCountry.isSelected = true
+						}
 						m.state = listView
 						items := make([]list.Item, len(timezones))
 						for idx, tz := range timezones {
@@ -157,16 +169,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.list.SetItems(items)
 						return m, cmd
 					} else {
-						// switch to tableview for a country, city or a tz
+						// switch to tableview for a selected country with just one tz, selected city or a selected tz
 						m.state = tableView
 						columns := []table.Column{}
 						rows := []table.Row{}
-						//check if selected option is not a city, but a country's tz in the form of "America/New_York"
+						//if selected option is not a city or a country, but a country's tz in the form of "America/New_York"
 						if _, ok1 := tzdata.CityToIanaTimezone[m.choice]; !ok1 {
 							if _, ok2 := tzdata.CountryToIanaTimezone[m.choice]; !ok2 {
 								columns = append(columns,
 									table.Column{Title: "TimeZone", Width: 20},
-									// table.Column{Title: "Country", Width: 25},
+									table.Column{Title: "Country", Width: 25},
 									table.Column{Title: "Date/Time", Width: 30},
 								)
 								timeResponse, err := formatTime(m.choice)
@@ -174,14 +186,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 									fmt.Printf("Error loading time zone: %v\n", err)
 									return m, nil
 								} else {
-									rows = append(rows, table.Row{m.choice, timeResponse})
+									rows = append(rows, table.Row{m.choice, storedCountry.name, timeResponse})
+									// rows = append(rows, table.Row{m.choice, timeResponse})
 								}
-							}else{
-							//for a country
-							rows, columns = buildTableFromLocation(m.choice)
-                            }
+							} else {
+								//if selected option is a country like Bhutan
+								rows, columns = buildTableFromLocation(m.choice)
+							}
 						} else {
-							//for a city
+							//if selected option is a city
 							rows, columns = buildTableFromLocation(m.choice)
 						}
 						m.table.SetColumns(columns)
@@ -273,9 +286,12 @@ func tableViewDateTime(location, zone string) {
 // buildTableFromLocation returns a rows and columns for a table
 //
 // Parameters:
-//		-location: A country or a city
+//
+//	-location: A country or a city
+//
 // Returns:
-//		-[]table.Row, []table.Column: A row and column for a table
+//
+//	-[]table.Row, []table.Column: A row and column for a table
 func buildTableFromLocation(location string) ([]table.Row, []table.Column) {
 	row := []table.Row{}
 	columns := []table.Column{}
@@ -290,8 +306,14 @@ func buildTableFromLocation(location string) ([]table.Row, []table.Column) {
 		country = val["country"]
 	} else if val, ok := tzdata.CountryToIanaTimezone[location]; ok {
 		if len(val) > 1 {
+			if !storedCountry.isSelected {
+				storedCountry.name = location
+				storedCountry.isSelected = true
+			}
 			listViewTz(val)
 			return nil, nil
+		} else {
+
 		}
 		tz = val[0]
 		country = location
@@ -308,9 +330,12 @@ func buildTableFromLocation(location string) ([]table.Row, []table.Column) {
 // buildTableFromZone returns a rows and columns for a table
 //
 // Parameters:
-//		-zone: A timezone like 'Asia/Kathmandu' or 'pst'
+//
+//	-zone: A timezone like 'Asia/Kathmandu' or 'pst'
+//
 // Returns:
-//		-[]table.Row, []table.Column: A row and column for a table
+//
+//	-[]table.Row, []table.Column: A row and column for a table
 func buildTableFromZone(zone string) ([]table.Row, []table.Column) {
 	row := []table.Row{}
 	columns := []table.Column{}
@@ -338,14 +363,13 @@ func buildTableFromZone(zone string) ([]table.Row, []table.Column) {
 	}
 	timeResponse, err = formatTime(tz)
 	if err != nil {
-		fmt.Printf("Error loading time zone: %v\n", err)
+		fmt.Printf("Error: %v\n", err)
 		return nil, nil
 	}
 	row[0][1] = timeResponse
 	return row, columns
 
 }
-
 
 //func buildRowFromCityOrCountry(locationList []string) {
 //	rows := []table.Row{}

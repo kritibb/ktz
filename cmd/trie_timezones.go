@@ -223,11 +223,17 @@ func getMatchingLocation(city, country string) ([]string, error) {
 		}
 		return nil, fmt.Errorf("City '%s' not found!", city)
 	} else {
-		once.Do(initializeCountryTrie)
-		if found, matchingOriginalLocationNames := new_trie.searchWordWithPrefix(country); found {
-			return matchingOriginalLocationNames, nil
-
+		//check if the country is 2-letter alpha-2 code
+		if countryName, ok := tzdata.Alpha2ToCountry[strings.ToUpper(country)]; ok {
+			return []string{countryName}, nil
+		} else if countryName, ok := tzdata.Alpha3ToCountry[strings.ToUpper(country)]; ok { //check if the country is 3-letter alpha-3 code
+			return []string{countryName}, nil
+		} else {
+			once.Do(initializeCountryTrie)
+			if found, matchingOriginalLocationNames := new_trie.searchWordWithPrefix(country); found {
+				return matchingOriginalLocationNames, nil
+			}
+			return nil, fmt.Errorf("Country '%s' not found!", country)
 		}
-		return nil, fmt.Errorf("Country '%s' not found!", country)
 	}
 }

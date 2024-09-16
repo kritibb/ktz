@@ -125,10 +125,10 @@ func printLookupHelp() {
 // ktz lookup -c="usa"/ 
 // ktz lookup nepal
 // ktz lookup kathmandu
+//edit country names to autonomous regions, and change the country in the cityTOIANA as well.
+//search country by 2-3 country code
 
 //////////////////////////////////// TODO ////////////////////////////
-//search country by 2-3 country code
-//edit country names to autonomous regions, and change the country in the cityTOIANA as well.
 //add more command like ktz help
 //write tests
 
