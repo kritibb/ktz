@@ -136,9 +136,9 @@ func printLookupHelp() {
 // ktz lookup kathmandu
 //edit country names to autonomous regions, and change the country in the cityTOIANA as well.
 //search country by 2-3 country code
+//add more command like ktz help
 
 //////////////////////////////////// TODO ////////////////////////////
-//add more command like ktz help
 //write tests
 
 //////////////////////////////////// Future ////////////////////////////

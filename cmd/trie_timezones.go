@@ -217,22 +217,21 @@ func initializeCountryTrie() {
 // It returns matching cities/countires if any city/country matches the given string, otherwise an error.
 func getMatchingLocation(city, country string) ([]string, error) {
 	if city != "" {
-		once.Do(initializeCityTrie)
+		initializeCityTrie()
 		if found, matchingOriginalLocationNames := new_trie.searchWordWithPrefix(city); found {
 			return matchingOriginalLocationNames, nil
 		}
 		return nil, fmt.Errorf("City '%s' not found!", city)
 	} else {
+		initializeCountryTrie()
 		//check if the country is 2-letter alpha-2 code
 		if countryName, ok := tzdata.Alpha2ToCountry[strings.ToUpper(country)]; ok {
 			return []string{countryName}, nil
 		} else if countryName, ok := tzdata.Alpha3ToCountry[strings.ToUpper(country)]; ok { //check if the country is 3-letter alpha-3 code
 			return []string{countryName}, nil
+		} else if found, matchingOriginalLocationNames := new_trie.searchWordWithPrefix(country); found {
+			return matchingOriginalLocationNames, nil
 		} else {
-			once.Do(initializeCountryTrie)
-			if found, matchingOriginalLocationNames := new_trie.searchWordWithPrefix(country); found {
-				return matchingOriginalLocationNames, nil
-			}
 			return nil, fmt.Errorf("Country '%s' not found!", country)
 		}
 	}
