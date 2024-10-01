@@ -2,10 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/kritibb/ktz/tzdata"
 	"strings"
 	"time"
-
-	"github.com/kritibb/ktz/tzdata"
 )
 
 type zoneInfo struct {
@@ -44,11 +43,11 @@ func ResolveTimezone(city, country, zone string) {
 		fmt.Println("\nError:", err)
 		return
 	}
-    currentLocationData,errLocation:=getDataFromLocation(locationList)
-		if errLocation != nil {
-			fmt.Printf("\nError: %v\n", err)
-			return
-		}
+	currentLocationData, errLocation := getDataFromLocation(locationList)
+	if errLocation != nil {
+		fmt.Printf("\nError: %v\n", err)
+		return
+	}
 	renderDateTimeTableFromLocation(currentLocationData)
 	return
 }
@@ -106,7 +105,7 @@ func getDataFromZone(zone string) (zoneInfo, error) {
 		zoneData.abbreviation = zone
 		if val, ok := tzdata.AbbToIanaTimezone[strings.ToUpper(zone)]; !ok {
 			err = fmt.Errorf("Zone abbreviation '%v' not found.\n\n", zone)
-            return zoneData, err
+			return zoneData, err
 		} else {
 			zoneData.timezoneName = val
 		}
