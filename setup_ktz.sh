@@ -3,6 +3,9 @@
 # Set the project name
 PROJECT_NAME="ktz"
 
+#Tidy the Go Application
+go mod tidy
+
 # Build the Go application
 echo "Building the Go application..."
 go build -o $PROJECT_NAME

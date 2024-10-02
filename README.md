@@ -14,21 +14,21 @@
 
 ## 1. Installation
 
-To get started with `ktz`, follow the steps below:
+To get started with `ktz`, follow either <strong>one</strong> of the steps below:
 
 1. Install the application by running:
 
    ```zsh
-   go install github.com/kritibb/ktz@v0.1.0
+   $ go install github.com/kritibb/ktz@v0.1.0
    ```
 
-2. Run the setup script:
+2. Or, run the setup script:
 
    ```zsh
-   sh setup_ktz.sh
+   $ git clone git@github.com:kritibb/ktz.git
+   $ cd ktz
+   $ sh setup_ktz.sh
    ```
-
-3. Start using `ktz`!
 
 ## 2. Usage / Examples
 
@@ -37,13 +37,13 @@ To get started with `ktz`, follow the steps below:
 - Use full name of a city:
 
   ```bash
-  ktz lookup sydney
+  $ ktz lookup sydney
   ```
 
 - Use prefix search:
 
   ```bash
-  ktz lookup syd
+  $ ktz lookup syd
   ```
 
     <details>
@@ -58,7 +58,7 @@ To get started with `ktz`, follow the steps below:
 - Use the 3-letter country code:
 
   ```bash
-  ktz lookup -c NPL
+  $ ktz lookup -c NPL
   ```
 
     <details>
@@ -66,19 +66,18 @@ To get started with `ktz`, follow the steps below:
 
   ![Country code demo](https://github.com/kritibb/documentation-files/blob/main/ktz-assets/countrycode3.gif?raw=true)
 
-    </details>
-    </br>
+    </details><br>
 
 - Use the 3-letter country code:
 
   ```bash
-  ktz lookup -c NP
+  $ ktz lookup -c NP
   ```
 
 - Use the prefix search:
 
   ```bash
-  ktz lookup -c aust
+  $ ktz lookup -c aust
   ```
 
     <details>
@@ -93,7 +92,7 @@ To get started with `ktz`, follow the steps below:
 - Use timezone abbreviation:
 
   ```bash
-  ktz lookup -z pst
+  $ ktz lookup -z pst
   ```
 
     <details>
@@ -101,13 +100,12 @@ To get started with `ktz`, follow the steps below:
 
   ![Zone abbreviation demo](https://github.com/kritibb/documentation-files/blob/main/ktz-assets/zone-abb.gif?raw=true)
 
-    </details>
-    </br>
+    </details><br>
 
 - Use the full timezone name:
 
   ```bash
-  ktz lookup -z Asia/Kathmandu
+  $ ktz lookup -z Asia/Kathmandu
   ```
 
     <details>
