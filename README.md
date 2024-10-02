@@ -22,7 +22,7 @@ To get started with `ktz`, follow either <strong>one</strong> of the steps below
    $ go install github.com/kritibb/ktz@v0.1.0
    ```
 
-2. Or, run the setup script:
+2. Or, run the following commands:
 
    ```zsh
    $ git clone git@github.com:kritibb/ktz.git
@@ -66,7 +66,7 @@ To get started with `ktz`, follow either <strong>one</strong> of the steps below
 
   ![Country code demo](https://github.com/kritibb/documentation-files/blob/main/ktz-assets/countrycode3.gif?raw=true)
 
-    </details><br>
+    </details>
 
 - Use the 3-letter country code:
 
@@ -100,7 +100,7 @@ To get started with `ktz`, follow either <strong>one</strong> of the steps below
 
   ![Zone abbreviation demo](https://github.com/kritibb/documentation-files/blob/main/ktz-assets/zone-abb.gif?raw=true)
 
-    </details><br>
+    </details>
 
 - Use the full timezone name:
 
